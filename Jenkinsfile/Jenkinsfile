@@ -1,27 +1,36 @@
 
 import java.text.SimpleDateFormat
 
-
-jobName = null
-deploy_Env = null
-environment = null
-microSvcName = null
-
 ecRegistry = "https://758637906269.dkr.ecr.us-east-1.amazonaws.com/connector-dev"
-aws_cred = "awscred"
 ecr_repo = "758637906269.dkr.ecr.us-east-1.amazonaws.com/connector-dev"
-project = 'hello-tomcat-projects'  
+ecr_tag="connector-dev"
+project = 'hello-world'  
 branch = "master"    
 gitCreds = 'cred7864'      
 build_dir = '/var/lib/jenkins/node/workspace/test-ecs-pipe/target'  
+execute_dir= '/var/lib/jenkins/node/workspace/test-ecs-pipe'
 docker_files = "/var/lib/jenkins/node/workspace/test-ecs-pipe/Dockerfiles"
 deploy_dir = "hello-artifactory/${env.BUILD_NUMBER}"
 s3_cmd = "aws s3 cp"
 war="mavenproject1-1.0-SNAPSHOT.war"
+ecr_cmd="aws ecr describe-images"
+
+
+action="update"
+reg="us-east-1"
+ecs_svc="test-service-5"
+clus_name="connector-clus"
+count=1
+ecs_api="https://37mwxnme44.execute-api.us-east-1.amazonaws.com/ecs/"
+
+
+
+
+
 
 def checkout() 
 {
-   git url: "https://github.com/nik786/${project}.git", branch: "${branch}", credentialsId: "${gitCreds}"
+   git url: "https://github.com/jenkins-ops-org/${project}.git", branch: "${branch}", credentialsId: "${gitCreds}"
        
    		
 }
@@ -56,6 +65,20 @@ def docker_push()
 }
 
 
+def ecs_deploy()
+{
+  
+    LATEST_IMAGE_NO = sh (
+		script: ''' aws ecr describe-images --repository-name connector-dev --query "sort_by(imageDetails,& imagePushedAt)[-1].imageTags[0]" --output text ''' ,
+	    returnStdout: true
+	    ).trim()
+	    echo  "${LATEST_IMAGE_NO}"
+
+    sh "python /var/lib/jenkins/node/workspace/test-ecs-pipe/update.py -a update -r ${reg} -s ${ecs_svc} -c ${clus_name} -i ${ecr_repo}:${LATEST_IMAGE_NO} -d ${count} -l ${ecs_api}"
+    currentBuild.result = 'SUCCESS'    
+        
+}
+
 
 try{
 		
@@ -81,6 +104,10 @@ try{
 				
 				stage("Docker Push") {
 						docker_push()
+				}	
+				
+				 stage("ECS DEPLOY") {
+						ecs_deploy()
 				}	
       
     }
