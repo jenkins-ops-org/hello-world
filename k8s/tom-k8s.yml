@@ -1,0 +1,28 @@
+- hosts: dev
+  connection: local
+  tasks:
+     - name: Create a k8s namespace
+       k8s:
+         name: testing
+         api_version: v1
+         kind: Namespace
+         state: present
+     - name: create tomcat deploy
+       k8s:
+         state: present
+         definition: "{{ lookup('template', 'files/tomcat-deploy.yml.j2') }}"
+     - name: create tomcat svc
+       k8s:
+         state: present
+         definition: "{{ lookup('template', 'files/tomcat-svc.yml.j2') }}"
+     - name: Get the details of the tomcat Service.
+       k8s_info:
+         api_version: v1
+         kind: Service
+         name: tomcat
+         namespace: testing
+       register: tom_svc
+
+     - name: Print the NodePort of the tomcat Service.
+       debug:
+         var: tom_svc.resources[0].spec.ports[0].nodePort
