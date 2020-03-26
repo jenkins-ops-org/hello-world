@@ -10,11 +10,11 @@
      - name: create tomcat deploy
        k8s:
          state: present
-         definition: "{{ lookup('template', 'files/tom-deploy.yml.j2') }}"
+         definition: "{{ lookup('template', 'files/tomcat-deploy.yml.j2') }}"
      - name: create tomcat svc
        k8s:
          state: present
-         definition: "{{ lookup('template', 'files/tom-svc.yml.j2') }}"
+         definition: "{{ lookup('template', 'files/tomcat-svc.yml.j2') }}"
      - name: Get the details of the tomcat Service.
        k8s_info:
          api_version: v1
